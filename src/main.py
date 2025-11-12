@@ -1,26 +1,16 @@
 from src.api import HHAPI
 from src.database import DatabaseManager
 from src.db_manager import DBManager
-from src.utils import format_salary
+from src.utils import format_salary, get_company_ids
 
 
 def main():
     """Main application function"""
-    # List of company IDs for data collection
-    COMPANY_IDS = [
-        '15478',  # VK
-        '3529',  # Сбер
-        '1740',  # Яндекс
-        '4181',  # Wildberries
-        '3776',  # МТС
-        '39305',  # Газпром нефть
-        '87021',  # Тинькофф
-        '907345',  # Ozon
-        '1057',  # Касперский
-        '1122462'  # Сбермаркет
-    ]
+    # Get company IDs from configuration
+    COMPANY_IDS = get_company_ids()
 
     print("=== HH.RU VACANCIES DATABASE PROJECT ===\n")
+    print(f"Analyzing {len(COMPANY_IDS)} companies...")
 
     # Initialize components
     api = HHAPI()
@@ -63,16 +53,19 @@ def main():
     print(f"\nAverage salary: {avg_salary:,.2f} руб.")
 
     # Search example
-    print("\nSearch results for 'python':")
-    python_vacancies = analysis_db.get_vacancies_with_keyword('python')
+    from src.utils import Config
+    keyword = Config.DEFAULT_SEARCH_KEYWORD
+    print(f"\nSearch results for '{keyword}':")
+    python_vacancies = analysis_db.get_vacancies_with_keyword(keyword)
+
     if python_vacancies:
-        for company, vacancy, salary_from, salary_to, currency, url in python_vacancies[:3]:
+        for company, vacancy, salary_from, salary_to, currency, url in python_vacancies[:Config.RESULTS_LIMIT]:
             salary_info = format_salary(salary_from, salary_to, currency)
             print(f"   {company} - {vacancy}")
             print(f"   Salary: {salary_info}")
             print(f"   URL: {url}\n")
     else:
-        print("   No vacancies found with 'python'")
+        print(f"   No vacancies found with '{keyword}'")
 
     print("\n✅ Project completed successfully!")
     print("📁 Database: 'hh_vacancies.db'")
