@@ -1,12 +1,8 @@
-import pytest
 import sys
 import os
-
+from src.api import HHAPI
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from unittest.mock import Mock, patch
-from src.api import HHAPI
 
 
 class TestHHAPI:

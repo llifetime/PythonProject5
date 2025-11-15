@@ -1,6 +1,7 @@
 import sqlite3
 from typing import List, Tuple, Optional
-from src.utils import Config, format_salary
+from src.utils import Config
+
 
 config = Config()
 
@@ -39,9 +40,9 @@ class DBManager:
     def get_all_vacancies(self) -> List[Tuple]:
         """Get all vacancies with company name, vacancy name, salary and link"""
         query = """
-            SELECT 
-                e.company_name, 
-                v.vacancy_name, 
+            SELECT
+                e.company_name,
+                v.vacancy_name,
                 v.salary_from,
                 v.salary_to,
                 v.currency,
@@ -66,9 +67,9 @@ class DBManager:
         """Get vacancies with salary higher than average"""
         avg_salary = self.get_avg_salary()
         query = """
-            SELECT 
-                e.company_name, 
-                v.vacancy_name, 
+            SELECT
+                e.company_name,
+                v.vacancy_name,
                 v.salary_from,
                 v.salary_to,
                 v.currency,
@@ -83,9 +84,9 @@ class DBManager:
     def get_vacancies_with_keyword(self, keyword: str) -> List[Tuple]:
         """Get vacancies containing keyword in name"""
         query = """
-            SELECT 
-                e.company_name, 
-                v.vacancy_name, 
+            SELECT
+                e.company_name,
+                v.vacancy_name,
                 v.salary_from,
                 v.salary_to,
                 v.currency,

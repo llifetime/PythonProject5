@@ -1,115 +1,99 @@
 import sqlite3
-from typing import List, Dict
+from typing import List, Tuple, Optional
 from src.utils import Config
+
 
 config = Config()
 
 
 class DatabaseManager:
-    """Class for managing SQLite database"""
+    """Class for working with database data"""
 
     def __init__(self):
         self.database_name = config.DB_NAME
 
-    def create_tables(self) -> None:
-        """Create database tables"""
+    def _execute_query(self, query: str, params: Optional[Tuple] = None) -> List[Tuple]:
+        """Helper method for executing queries"""
         conn = sqlite3.connect(self.database_name)
-
-        # Create employers table
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS employers (
-                employer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                company_id INTEGER UNIQUE NOT NULL,
-                company_name TEXT NOT NULL,
-                description TEXT,
-                website TEXT,
-                vacancies_url TEXT
-            )
-        """)
-
-        # Create vacancies table
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS vacancies (
-                vacancy_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                employer_id INTEGER REFERENCES employers(employer_id),
-                vacancy_name TEXT NOT NULL,
-                salary_from INTEGER,
-                salary_to INTEGER,
-                currency TEXT,
-                url TEXT UNIQUE NOT NULL,
-                requirement TEXT,
-                responsibility TEXT
-            )
-        """)
-
-        conn.commit()
-        conn.close()
-        print(f"Database {self.database_name} created successfully!")
-
-    def save_data_to_database(self, employers_data: List[Dict], vacancies_data: List[Dict]) -> None:
-        """Save companies and vacancies data to database"""
-        conn = sqlite3.connect(self.database_name)
-
         try:
-            # Save employers
-            employer_mapping = {}
-            for employer in employers_data:
-                cursor = conn.execute("""
-                    INSERT OR REPLACE INTO employers 
-                    (company_id, company_name, description, website, vacancies_url)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (
-                    employer['id'],
-                    employer['name'],
-                    employer.get('description', '')[:config.MAX_DESCRIPTION_LENGTH],
-                    employer.get('site_url', ''),
-                    employer.get('vacancies_url', '')
-                ))
-                employer_mapping[employer['id']] = cursor.lastrowid
-
-            # Save vacancies
-            vacancies_count = 0
-            for vacancy in vacancies_data:
-                employer_id = employer_mapping.get(vacancy['employer']['id'])
-                if employer_id:
-                    # Safe salary data extraction
-                    salary_data = vacancy.get('salary')
-                    if salary_data:
-                        salary_from = salary_data.get('from')
-                        salary_to = salary_data.get('to')
-                        currency = salary_data.get('currency')
-                    else:
-                        salary_from = None
-                        salary_to = None
-                        currency = None
-
-                    try:
-                        conn.execute("""
-                            INSERT OR IGNORE INTO vacancies 
-                            (employer_id, vacancy_name, salary_from, salary_to, 
-                             currency, url, requirement, responsibility)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (
-                            employer_id,
-                            vacancy['name'],
-                            salary_from,
-                            salary_to,
-                            currency,
-                            vacancy['alternate_url'],
-                            vacancy['snippet'].get('requirement', ''),
-                            vacancy['snippet'].get('responsibility', '')
-                        ))
-                        vacancies_count += 1
-                    except Exception as e:
-                        print(f"Error saving vacancy {vacancy['name']}: {e}")
-
-            conn.commit()
-            message = f"Data saved successfully: {len(employers_data)} companies, "
-            message += f"{vacancies_count} vacancies"
-            print(message)
-
+            cursor = conn.cursor()
+            cursor.execute(query, params or ())
+            result = cursor.fetchall()
+            return result
         except Exception as e:
-            print(f"Error saving data: {e}")
-            conn.rollback()
+            print(f"Error executing query: {e}")
+            return []
         finally:
             conn.close()
+
+    def get_companies_and_vacancies_count(self) -> List[Tuple]:
+        """Get list of all companies and their vacancies count"""
+        query = """
+            SELECT e.company_name, COUNT(v.vacancy_id) as vacancies_count
+            FROM employers e
+            LEFT JOIN vacancies v ON e.employer_id = v.employer_id
+            GROUP BY e.company_name
+            ORDER BY vacancies_count DESC
+        """
+        return self._execute_query(query)
+
+    def get_all_vacancies(self) -> List[Tuple]:
+        """Get all vacancies with company name, vacancy name, salary and link"""
+        query = """
+            SELECT
+                e.company_name,
+                v.vacancy_name,
+                v.salary_from,
+                v.salary_to,
+                v.currency,
+                v.url
+            FROM vacancies v
+            JOIN employers e ON v.employer_id = e.employer_id
+            ORDER BY e.company_name, v.vacancy_name
+        """
+        return self._execute_query(query)
+
+    def get_avg_salary(self) -> float:
+        """Get average salary for vacancies"""
+        query = """
+            SELECT AVG((COALESCE(salary_from, 0) + COALESCE(salary_to, 0)) / 2.0) as avg_salary
+            FROM vacancies
+            WHERE salary_from IS NOT NULL OR salary_to IS NOT NULL
+        """
+        result = self._execute_query(query)
+        return round(result[0][0], 2) if result and result[0][0] else 0.0
+
+    def get_vacancies_with_higher_salary(self) -> List[Tuple]:
+        """Get vacancies with salary higher than average"""
+        avg_salary = self.get_avg_salary()
+        query = """
+            SELECT
+                e.company_name,
+                v.vacancy_name,
+                v.salary_from,
+                v.salary_to,
+                v.currency,
+                v.url
+            FROM vacancies v
+            JOIN employers e ON v.employer_id = e.employer_id
+            WHERE (COALESCE(v.salary_from, 0) + COALESCE(v.salary_to, 0)) / 2.0 > ?
+            ORDER BY (COALESCE(v.salary_from, 0) + COALESCE(v.salary_to, 0)) / 2.0 DESC
+        """
+        return self._execute_query(query, (avg_salary,))
+
+    def get_vacancies_with_keyword(self, keyword: str) -> List[Tuple]:
+        """Get vacancies containing keyword in name"""
+        query = """
+            SELECT
+                e.company_name,
+                v.vacancy_name,
+                v.salary_from,
+                v.salary_to,
+                v.currency,
+                v.url
+            FROM vacancies v
+            JOIN employers e ON v.employer_id = e.employer_id
+            WHERE LOWER(v.vacancy_name) LIKE LOWER(?)
+            ORDER BY e.company_name, v.vacancy_name
+        """
+        return self._execute_query(query, (f'%{keyword}%',))
