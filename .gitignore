@@ -1,21 +1,21 @@
-# Environment variables
-.env
-!.env.example
+# Virtual environment
+venv/
+env/
+.venv/
 
-# Python
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.so
-.Python
-env/
-venv/
-.venv/
 
-# Database
+# Database files
 *.db
 *.sqlite3
+
+# Environment variables
+.env
+.env.local
 
 # IDE
 .vscode/
@@ -29,9 +29,3 @@ Thumbs.db
 
 # Logs
 *.log
-logs/
-
-# Data
-data/raw/
-data/processed/
-exports/
