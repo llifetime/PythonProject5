@@ -1,6 +1,6 @@
 import os
 import sys
-from src.utils import Config, format_salary, safe_get
+from hh_vacancies import Config, format_salary, safe_get
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 

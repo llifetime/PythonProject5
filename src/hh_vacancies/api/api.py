@@ -1,8 +1,6 @@
 import requests
 from typing import Optional, Dict, List
-from src.utils import Config
-
-config = Config()
+from ..utils.config import config
 
 
 class HHAPI:

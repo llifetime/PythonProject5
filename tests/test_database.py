@@ -1,8 +1,8 @@
 import sys
 import os
 from unittest.mock import Mock, patch
-from src.database import DatabaseManager
-from src.db_manager import DBManager
+from hh_vacancies import DatabaseManager
+from hh_vacancies import DBManager
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))

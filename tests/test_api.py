@@ -1,6 +1,6 @@
 import sys
 import os
-from src.api import HHAPI
+from hh_vacancies import HHAPI
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 

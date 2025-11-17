@@ -1,0 +1,1 @@
+"""Services module for HH Vacancies project"""
