@@ -1,7 +1,7 @@
-from src.api import HHAPI
-from src.database import DatabaseManager
-from src.db_manager import DBManager
-from src.utils import format_salary, get_company_ids
+from hh_vacancies import HHAPI
+from hh_vacancies import DatabaseManager
+from hh_vacancies import DBManager
+from hh_vacancies import format_salary, get_company_ids
 
 
 def main():
@@ -53,7 +53,7 @@ def main():
     print(f"\nAverage salary: {avg_salary:,.2f} руб.")
 
     # Search example
-    from src.utils import Config
+    from hh_vacancies import Config
     keyword = Config.DEFAULT_SEARCH_KEYWORD
     print(f"\nSearch results for '{keyword}':")
     python_vacancies = analysis_db.get_vacancies_with_keyword(keyword)

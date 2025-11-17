@@ -1,12 +1,12 @@
 import sqlite3
 from typing import List, Tuple, Optional
-from src.utils import Config
+from hh_vacancies import Config
 
 
 config = Config()
 
 
-class DatabaseManager:
+class DBManager:
     """Class for working with database data"""
 
     def __init__(self):

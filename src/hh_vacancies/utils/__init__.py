@@ -1,0 +1,1 @@
+"""Utilities module for HH Vacancies project"""
